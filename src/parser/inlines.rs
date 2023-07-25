@@ -19,6 +19,40 @@ use unicode_categories::UnicodeCategories;
 const MAXBACKTICKS: usize = 80;
 const MAX_LINK_LABEL_LENGTH: usize = 1000;
 
+const JP_PUNCTUATIONS: [char; 45] = [
+    '\u{2025}', // ‥
+    '\u{2026}', // …
+    '\u{203b}', // ※
+    '\u{3001}', '\u{3002}', // 、。
+    '\u{3008}', '\u{3009}', // 〈〉
+    '\u{300a}', '\u{300b}', // 《》
+    '\u{300c}', '\u{300d}', // 「」
+    '\u{300e}', '\u{300f}', // 『』
+    '\u{3010}', '\u{3011}', // 【】
+    '\u{3014}', '\u{3015}', // 〔〕
+    '\u{3016}', '\u{3017}', // 〖〗
+    '\u{3018}', '\u{3019}', // 〘〙
+    '\u{301A}', '\u{301B}', // 〚〛
+    '\u{301C}', // 〜
+    '\u{30FB}', // ・
+    '\u{ff01}', // ！
+    '\u{ff02}', // ”
+    '\u{ff03}', // ＃
+    '\u{ff05}', // ％
+    '\u{ff06}', // ＆
+    '\u{ff08}', '\u{ff09}', // （）
+    '\u{ff0a}', // ＊
+    '\u{ff0c}', // ，
+    '\u{ff0e}', // ．
+    '\u{ff1a}', // ：
+    '\u{ff1b}', // ；
+    '\u{ff1f}', // ？
+    '\u{ff20}', // ＠
+    '\u{ff3b}', '\u{ff3d}', // ［］
+    '\u{ff5b}', '\u{ff5d}', // ｛｝
+    '\u{ff5f}', '\u{ff60}', // ｟｠
+];
+
 pub struct Subject<'a: 'd, 'r, 'o, 'd, 'i, 'c: 'subj, 'subj> {
     pub arena: &'a Arena<AstNode<'a>>,
     options: &'o Options,
@@ -709,6 +743,10 @@ impl<'a, 'r, 'o, 'd, 'i, 'c, 'subj> Subject<'a, 'r, 'o, 'd, 'i, 'c, 'subj> {
         }
     }
 
+    fn is_punctuation_without_jp(&mut self, c: char) -> bool {
+        c.is_punctuation() && !JP_PUNCTUATIONS.contains(&c)
+    }
+
     pub fn scan_delims(&mut self, c: u8) -> (usize, bool, bool) {
         let before_char = if self.pos == 0 {
             '\n'
@@ -772,20 +810,20 @@ impl<'a, 'r, 'o, 'd, 'i, 'c, 'subj> Subject<'a, 'r, 'o, 'd, 'i, 'c, 'subj> {
 
         let left_flanking = numdelims > 0
             && !after_char.is_whitespace()
-            && !(after_char.is_punctuation()
+            && !(self.is_punctuation_without_jp(after_char)
                 && !before_char.is_whitespace()
-                && !before_char.is_punctuation());
+                && !self.is_punctuation_without_jp(before_char));
         let right_flanking = numdelims > 0
             && !before_char.is_whitespace()
-            && !(before_char.is_punctuation()
+            && !(self.is_punctuation_without_jp(before_char)
                 && !after_char.is_whitespace()
-                && !after_char.is_punctuation());
+                && !self.is_punctuation_without_jp(after_char));
 
         if c == b'_' {
             (
                 numdelims,
-                left_flanking && (!right_flanking || before_char.is_punctuation()),
-                right_flanking && (!left_flanking || after_char.is_punctuation()),
+                left_flanking && (!right_flanking || self.is_punctuation_without_jp(before_char)),
+                right_flanking && (!left_flanking || self.is_punctuation_without_jp(after_char)),
             )
         } else if c == b'\'' || c == b'"' {
             (
