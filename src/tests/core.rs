@@ -300,6 +300,13 @@ fn image_size() {
             "<p><img src=\"https://image.example.com/test.png%20=WxH\" alt=\"test.png\" /></p>\n"
         ),
     );
+    // URLの後にスペースが複数ある場合
+    html(
+        concat!("![test.png](https://image.example.com/test.png   =WxH)\n",),
+        concat!(
+            "<p><img src=\"https://image.example.com/test.png%20%20%20=WxH\" alt=\"test.png\" /></p>\n"
+        ),
+    );
 }
 
 #[test]
