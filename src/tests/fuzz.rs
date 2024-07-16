@@ -15,6 +15,7 @@ fn tasklist() {
 }
 
 #[test]
+// https://github.com/krayinc/docbase-cmark-wasm/pull/31 によって落ちるようになった。一旦落ちるままにしておく。
 fn table_nul() {
     html_opts!(
         [extension.table],

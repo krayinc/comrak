@@ -25,6 +25,40 @@ const MAXBACKTICKS: usize = 80;
 const MAX_LINK_LABEL_LENGTH: usize = 1000;
 const MAX_MATH_DOLLARS: usize = 2;
 
+const JP_PUNCTUATIONS: [char; 45] = [
+    '\u{2025}', // ‥
+    '\u{2026}', // …
+    '\u{203b}', // ※
+    '\u{3001}', '\u{3002}', // 、。
+    '\u{3008}', '\u{3009}', // 〈〉
+    '\u{300a}', '\u{300b}', // 《》
+    '\u{300c}', '\u{300d}', // 「」
+    '\u{300e}', '\u{300f}', // 『』
+    '\u{3010}', '\u{3011}', // 【】
+    '\u{3014}', '\u{3015}', // 〔〕
+    '\u{3016}', '\u{3017}', // 〖〗
+    '\u{3018}', '\u{3019}', // 〘〙
+    '\u{301A}', '\u{301B}', // 〚〛
+    '\u{301C}', // 〜
+    '\u{30FB}', // ・
+    '\u{ff01}', // ！
+    '\u{ff02}', // ”
+    '\u{ff03}', // ＃
+    '\u{ff05}', // ％
+    '\u{ff06}', // ＆
+    '\u{ff08}', '\u{ff09}', // （）
+    '\u{ff0a}', // ＊
+    '\u{ff0c}', // ，
+    '\u{ff0e}', // ．
+    '\u{ff1a}', // ：
+    '\u{ff1b}', // ；
+    '\u{ff1f}', // ？
+    '\u{ff20}', // ＠
+    '\u{ff3b}', '\u{ff3d}', // ［］
+    '\u{ff5b}', '\u{ff5d}', // ｛｝
+    '\u{ff5f}', '\u{ff60}', // ｟｠
+];
+
 pub struct Subject<'a: 'd, 'r, 'o, 'c, 'd, 'i> {
     pub arena: &'a Arena<AstNode<'a>>,
     options: &'o Options<'c>,
@@ -931,6 +965,10 @@ impl<'a, 'r, 'o, 'c, 'd, 'i> Subject<'a, 'r, 'o, 'c, 'd, 'i> {
         }
     }
 
+    fn is_punctuation_without_jp(&mut self, c: char) -> bool {
+        c.is_punctuation() && !JP_PUNCTUATIONS.contains(&c)
+    }
+
     pub fn scan_delims(&mut self, c: u8) -> (usize, bool, bool) {
         let before_char = if self.pos == 0 {
             '\n'
@@ -994,22 +1032,22 @@ impl<'a, 'r, 'o, 'c, 'd, 'i> Subject<'a, 'r, 'o, 'c, 'd, 'i> {
 
         let left_flanking = numdelims > 0
             && !after_char.is_whitespace()
-            && !((after_char.is_punctuation() || after_char.is_symbol())
+            && !((self.is_punctuation_without_jp(after_char) || after_char.is_symbol())
                 && !before_char.is_whitespace()
-                && !(before_char.is_punctuation() || before_char.is_symbol()));
+                && !(self.is_punctuation_without_jp(before_char) || before_char.is_symbol()));
         let right_flanking = numdelims > 0
             && !before_char.is_whitespace()
-            && !((before_char.is_punctuation() || before_char.is_symbol())
+            && !((self.is_punctuation_without_jp(before_char) || before_char.is_symbol())
                 && !after_char.is_whitespace()
-                && !(after_char.is_punctuation() || after_char.is_symbol()));
+                && !(self.is_punctuation_without_jp(after_char) || after_char.is_symbol()));
 
         if c == b'_' {
             (
                 numdelims,
                 left_flanking
-                    && (!right_flanking || before_char.is_punctuation() || before_char.is_symbol()),
+                    && (!right_flanking || self.is_punctuation_without_jp(before_char) || before_char.is_symbol()),
                 right_flanking
-                    && (!left_flanking || after_char.is_punctuation() || after_char.is_symbol()),
+                    && (!left_flanking || self.is_punctuation_without_jp(after_char) || after_char.is_symbol()),
             )
         } else if c == b'\'' || c == b'"' {
             (
@@ -1942,7 +1980,10 @@ pub fn manual_scan_link_url_2(input: &[u8]) -> Option<(&[u8], usize)> {
             }
             nb_p -= 1;
             i += 1;
-        } else if isspace(input[i]) || input[i].is_ascii_control() {
+        } else if ((isspace(input[i]) && input[i] != b' ')
+            || (input[i] == b' ' && i + 1 < len && input[i + 1] != b'=' && input[i + 1] != b' '))
+            || input[i].is_ascii_control()
+        {
             if i == 0 {
                 return None;
             }

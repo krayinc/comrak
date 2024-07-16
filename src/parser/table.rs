@@ -217,6 +217,11 @@ fn row(string: &[u8], spoiler: bool) -> Option<Row> {
         let cell_matched = scanners::table_cell(&string[offset..], spoiler).unwrap_or(0);
         let pipe_matched = scanners::table_cell_end(&string[offset + cell_matched..]).unwrap_or(0);
 
+        if offset == 0 && pipe_matched == 0 && cell_matched == string.len() - 1 {
+            // ただの文字列行はテーブル行とはみなさない
+            return None;
+        }
+
         if cell_matched > 0 || pipe_matched > 0 {
             let mut cell = unescape_pipes(&string[offset..offset + cell_matched]);
             trim(&mut cell);
