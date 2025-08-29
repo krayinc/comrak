@@ -2655,7 +2655,10 @@ pub(crate) fn manual_scan_link_url_2(input: &str) -> Option<(&str, usize)> {
             }
             nb_p -= 1;
             i += 1;
-        } else if isspace(bytes[i]) || (bytes[i].is_ascii_control() && bytes[i] != 0) {
+        } else if ((isspace(bytes[i]) && bytes[i] != b' ')
+            || (bytes[i] == b' ' && i + 1 < len && bytes[i + 1] != b'=' && bytes[i + 1] != b' '))
+            || (bytes[i].is_ascii_control() && bytes[i] != 0)
+        {
             if i == 0 {
                 return None;
             }
