@@ -237,8 +237,11 @@ fn row(string: &str, spoiler: bool) -> Option<Row<'_>> {
         let cell_matched = scanners::table_cell(&string[offset..], spoiler).unwrap_or(0);
         let pipe_matched = scanners::table_cell_end(&string[offset + cell_matched..]).unwrap_or(0);
 
-        if offset == 0 && pipe_matched == 0 && cell_matched == string.len() - 1 {
-            // ただの文字列行はテーブル行とはみなさない
+        if offset == 0
+            && pipe_matched == 0
+            && cell_matched == string.trim_end_matches(['\r', '\n']).len()
+        {
+            // ただの文字列行はテーブル行とはみなさない(末尾に改行が無い最終行も含む)
             return None;
         }
 

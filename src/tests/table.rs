@@ -155,6 +155,31 @@ fn table_regression() {
     );
 }
 
+// ただの文字列行はテーブル行とはみなさない
+#[test]
+fn table_plain_text_line_is_not_row() {
+    let expected = concat!(
+        "<table>\n",
+        "<thead>\n",
+        "<tr>\n",
+        "<th>A</th>\n",
+        "<th>B</th>\n",
+        "</tr>\n",
+        "</thead>\n",
+        "<tbody>\n",
+        "<tr>\n",
+        "<td>1</td>\n",
+        "<td>2</td>\n",
+        "</tr>\n",
+        "</tbody>\n",
+        "</table>\n",
+        "<p>abc</p>\n"
+    );
+    html_opts!([extension.table], "|A|B|\n|---|---|\n|1|2|\nabc\n", expected);
+    // 末尾に改行がない場合
+    html_opts!([extension.table], "|A|B|\n|---|---|\n|1|2|\nabc", expected);
+}
+
 #[test]
 fn table_misparse_1() {
     html_opts!([extension.table], "a\n-b", "<p>a\n-b</p>\n");

@@ -31,6 +31,7 @@ fn tasklist_with_classes() {
 
 #[test]
 fn table_nul() {
+    // DocBase: ただの文字列行はテーブル行とはみなさない
     html_opts!(
         [extension.table],
         "\0|.\n-|-\nZ",
@@ -41,13 +42,8 @@ fn table_nul() {
 <th>.</th>
 </tr>
 </thead>
-<tbody>
-<tr>
-<td>Z</td>
-<td></td>
-</tr>
-</tbody>
 </table>
+<p>Z</p>
 "##,
     );
 }
